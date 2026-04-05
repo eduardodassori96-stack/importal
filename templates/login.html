@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar sesión — Importal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    .gradient-bg { background: linear-gradient(135deg, #0f4a8a 0%, #1a6bbf 100%); }
+  </style>
+</head>
+<body x-data="loginApp()" class="font-[Inter] min-h-screen flex">
+
+<!-- Left panel -->
+<div class="hidden md:flex w-1/2 gradient-bg flex-col justify-center px-16 text-white">
+  <a href="/" class="flex items-center gap-2 mb-12 text-white/80 hover:text-white transition-colors text-sm">← Volver al inicio</a>
+  <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center mb-6">
+    <span class="text-2xl font-extrabold">IM</span>
+  </div>
+  <h1 class="text-3xl font-extrabold mb-4">Importal</h1>
+  <p class="text-blue-200 text-lg leading-relaxed mb-10">Gestiona tus importaciones desde EE.UU. con total transparencia y en tiempo real.</p>
+  <div class="space-y-4 text-sm text-blue-100">
+    <div class="flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">📦</span> Seguimiento en tiempo real de tus cargas</div>
+    <div class="flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">💳</span> Historial completo de cobros y pagos</div>
+    <div class="flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">📊</span> Dashboard con resumen de tu inversión</div>
+  </div>
+</div>
+
+<!-- Right panel -->
+<div class="flex-1 flex items-center justify-center px-6 py-10 bg-gray-50">
+  <div class="w-full max-w-md">
+    <!-- Mobile logo -->
+    <div class="flex items-center gap-2 mb-8 md:hidden">
+      <div class="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center">
+        <span class="text-white font-bold text-sm">IM</span>
+      </div>
+      <span class="font-bold text-xl text-gray-900">Importal</span>
+    </div>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-1">Bienvenido de vuelta</h2>
+    <p class="text-gray-500 text-sm mb-7">Ingresa tus credenciales para continuar</p>
+
+    <div x-show="error" x-cloak class="alert alert-danger mb-5">
+      <span>⚠️</span><span x-text="error"></span>
+    </div>
+
+    <form @submit.prevent="login()">
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" x-model="form.email" placeholder="tu@correo.cl" required autofocus class="bg-white">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <div class="relative">
+          :type="showPass ? 'text' : 'password'"
+          <input :type="showPass ? 'text' : 'password'" x-model="form.password" placeholder="••••••••" required class="bg-white">
+          <button type="button" @click="showPass=!showPass" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">
+            <span x-text="showPass ? '🙈' : '👁️'"></span>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" :disabled="loading" class="btn btn-primary w-full btn-lg justify-center mt-2" :class="{'opacity-60':loading}">
+        <span x-show="loading" class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>
+        <span x-text="loading ? 'Ingresando…' : 'Iniciar sesión'"></span>
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-500 mt-6">¿No tienes cuenta? <a href="/" class="text-blue-600 font-semibold hover:underline">Regístrate gratis</a></p>
+
+    <!-- Dev hint -->
+    <div class="mt-8 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+      <strong>Demo admin:</strong> admin@importal.cl / admin123
+    </div>
+  </div>
+</div>
+
+<script>
+function loginApp() {
+  return {
+    form: { email: '', password: '' },
+    error: '',
+    loading: false,
+    showPass: false,
+    async login() {
+      this.loading = true; this.error = '';
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.form)
+        });
+        const data = await res.json();
+        if (!res.ok) { this.error = data.error || 'Error al iniciar sesión.'; return; }
+        // Redirect based on role
+        if (data.user?.role === 'ADMIN') {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/dashboard';
+        }
+      } catch(e) {
+        this.error = 'Error de conexión. Intenta de nuevo.';
+      } finally {
+        this.loading = false;
+      }
+    }
+  }
+}
+</script>
+</body>
+</html>

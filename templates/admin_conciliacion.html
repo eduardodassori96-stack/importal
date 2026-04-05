@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conciliación Bancaria — Importal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/admin_layout.js"></script>
+  <style>[x-cloak]{display:none!important} .gradient-card{background:linear-gradient(135deg,#1a6bbf 0%,#0f4a8a 100%);}</style>
+</head>
+<body x-data="concilApp()" x-init="init()" class="font-[Inter] bg-gray-50 min-h-screen">
+
+<aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+  class="fixed inset-y-0 left-0 z-40 w-60 bg-gray-900 flex flex-col" style="transition:transform .25s ease">
+  <div class="h-16 flex items-center px-5 border-b border-gray-700">
+    <div class="w-8 h-8 rounded-lg gradient-card flex items-center justify-center mr-2"><span class="text-white font-bold text-sm">IM</span></div>
+    <div><div class="font-bold text-white text-sm">Importal</div><div class="text-gray-400 text-xs">Panel Admin</div></div>
+  </div>
+  <nav class="flex-1 p-3 space-y-1">
+    <template x-for="n in nav" :key="n.key">
+      <a :href="n.href" :class="page===n.key ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors">
+        <span x-text="n.icon"></span><span x-text="n.label"></span>
+      </a>
+    </template>
+  </nav>
+  <div class="p-4 border-t border-gray-700">
+    <button @click="logout()" class="text-xs text-gray-500 hover:text-red-400 px-1">Cerrar sesión →</button>
+  </div>
+</aside>
+<div x-show="sidebarOpen" @click="sidebarOpen=false" class="fixed inset-0 z-30 bg-black/50 md:hidden" x-cloak></div>
+
+<div class="md:ml-60 min-h-screen">
+  <header class="h-16 bg-white border-b border-gray-200 flex items-center px-4 md:px-6 gap-4 sticky top-0 z-20">
+    <button @click="sidebarOpen=!sidebarOpen" class="md:hidden text-gray-500 text-xl">☰</button>
+    <h1 class="font-bold text-gray-900 flex-1">Conciliación Bancaria</h1>
+  </header>
+
+  <main class="p-4 md:p-6 max-w-4xl mx-auto">
+
+    <!-- Explicación -->
+    <div class="alert alert-info mb-6">
+      <span>ℹ️</span>
+      <div class="text-sm">
+        <strong>¿Cómo funciona?</strong> Descarga el CSV de movimientos de tu banco (Santander, BCI, etc.) y cárgalo aquí.
+        El sistema detecta automáticamente los cobros por el código único en la glosa (ej: <span class="font-mono bg-blue-50 px-1 rounded">PS-MAR26-MG-001</span>) y los marca como pagados.
+      </div>
+    </div>
+
+    <!-- Upload CSV -->
+    <div class="card mb-6">
+      <h2 class="font-bold text-gray-900 mb-4">📤 Cargar extracto bancario (CSV)</h2>
+
+      <div x-show="uploadResult" x-cloak class="alert alert-success mb-4">
+        <span>✅</span>
+        <div>
+          <strong x-text="uploadResult?.matched + ' movimientos asociados automáticamente'"></strong>
+          <div class="text-xs mt-0.5" x-text="'Total subidos: ' + uploadResult?.total"></div>
+        </div>
+      </div>
+      <div x-show="uploadError" x-cloak class="alert alert-danger mb-4">
+        <span>⚠️</span><span x-text="uploadError"></span>
+      </div>
+
+      <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center mb-4 hover:border-blue-400 transition-colors"
+        @dragover.prevent @drop.prevent="handleDrop($event)">
+        <div class="text-4xl mb-3">📂</div>
+        <div class="font-semibold text-gray-700 mb-1">Arrastra tu CSV aquí</div>
+        <div class="text-sm text-gray-400 mb-3">o selecciona el archivo manualmente</div>
+        <label class="btn btn-primary cursor-pointer">
+          Seleccionar CSV
+          <input type="file" accept=".csv,.txt" @change="handleFile($event)" class="hidden">
+        </label>
+      </div>
+
+      <div x-show="csvPreview.length>0" x-cloak>
+        <div class="text-sm font-semibold text-gray-700 mb-2" x-text="csvPreview.length + ' movimientos detectados. Vista previa:'"></div>
+        <div class="overflow-x-auto max-h-48 border border-gray-200 rounded-xl">
+          <table class="text-xs">
+            <thead><tr>
+              <th>Fecha</th><th>Descripción / Glosa</th><th>Monto</th><th>Tipo</th>
+            </tr></thead>
+            <tbody>
+              <template x-for="(row, i) in csvPreview.slice(0,10)" :key="i">
+                <tr :class="row._matched ? 'bg-green-50' : ''">
+                  <td x-text="row.date||'—'"></td>
+                  <td x-text="row.description||'—'"></td>
+                  <td x-text="row.amount?'$'+Number(row.amount).toLocaleString('es-CL'):'—'"></td>
+                  <td x-text="row.type||'ABONO'"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+        <div x-show="csvPreview.length>10" class="text-xs text-gray-400 text-center mt-1" x-text="'... y '+(csvPreview.length-10)+' más'"></div>
+        <button @click="uploadCSV()" :disabled="uploading" class="btn btn-primary mt-4" :class="{'opacity-60':uploading}">
+          <span x-show="uploading" class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>
+          <span x-text="uploading ? 'Procesando…' : '🏦 Procesar y conciliar'"></span>
+        </button>
+      </div>
+
+      <!-- Instrucciones formato CSV -->
+      <details class="mt-4">
+        <summary class="text-sm text-gray-500 cursor-pointer hover:text-gray-700">Ver formato CSV esperado</summary>
+        <div class="mt-2 bg-gray-800 text-green-300 rounded-xl p-4 text-xs font-mono overflow-x-auto">
+          fecha,descripcion,monto,tipo<br>
+          2026-04-01,TRANSFERENCIA PS-MAR26-MG-001 CLIENTE,150000,ABONO<br>
+          2026-04-01,TRANSFERENCIA PS-MAR26-JR-002 PEDRO,89000,ABONO
+        </div>
+        <div class="text-xs text-gray-400 mt-2">
+          El sistema busca el patrón <span class="font-mono">PS-XXXX-XX-XXX</span> en la columna <em>descripcion</em>. El nombre exacto de columnas puede variar — el sistema es flexible con alias comunes de bancos chilenos.
+        </div>
+      </details>
+    </div>
+
+    <!-- Movimientos sin asociar -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-gray-900">Movimientos sin asociar</h2>
+        <button @click="loadUnmatched()" class="text-sm text-blue-600 hover:underline">🔄 Actualizar</button>
+      </div>
+      <div x-show="loadingUnmatched" class="loading text-sm py-4">Cargando…</div>
+      <div x-show="!loadingUnmatched && unmatched.length===0" class="empty-state py-4 text-sm">
+        <div>✅ Sin movimientos pendientes de asociar</div>
+      </div>
+      <div x-show="!loadingUnmatched && unmatched.length>0" class="overflow-x-auto">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Descripción</th><th>Monto</th><th>Estado</th>
+          </tr></thead>
+          <tbody>
+            <template x-for="m in unmatched" :key="m.id">
+              <tr>
+                <td class="text-xs text-gray-400" x-text="API.fmt.date(m.bank_date)"></td>
+                <td class="text-sm" x-text="m.description"></td>
+                <td class="font-semibold" x-text="API.fmt.clp(m.amount)"></td>
+                <td><span class="badge badge-pending">Sin asociar</span></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+function concilApp() {
+  return {
+    ...adminLayout('admin_concil'),
+    csvPreview: [],
+    uploading: false,
+    uploadResult: null,
+    uploadError: '',
+    unmatched: [],
+    loadingUnmatched: true,
+
+    handleDrop(e) {
+      const file = e.dataTransfer.files[0];
+      if (file) this.parseCSV(file);
+    },
+    handleFile(e) {
+      const file = e.target.files[0];
+      if (file) this.parseCSV(file);
+    },
+
+    parseCSV(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target.result;
+        const rows = text.trim().split('\n');
+        if (rows.length < 2) { this.uploadError = 'CSV vacío o inválido'; return; }
+        const header = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/["']/g,''));
+        // Flexible column mapping
+        const colMap = {
+          date: header.findIndex(h => ['fecha','date','f'].includes(h)),
+          description: header.findIndex(h => ['descripcion','descripción','glosa','description','detalle'].includes(h)),
+          amount: header.findIndex(h => ['monto','amount','importe','valor','abono'].includes(h)),
+          type: header.findIndex(h => ['tipo','type'].includes(h)),
+        };
+        this.csvPreview = rows.slice(1).filter(r=>r.trim()).map(row => {
+          const cols = row.split(',').map(c => c.trim().replace(/["']/g,''));
+          return {
+            date: colMap.date>=0 ? cols[colMap.date] : cols[0],
+            description: colMap.description>=0 ? cols[colMap.description] : cols[1],
+            amount: colMap.amount>=0 ? parseFloat(cols[colMap.amount].replace(/[.$]/g,'')) : parseFloat(cols[2]),
+            type: colMap.type>=0 ? cols[colMap.type] : 'ABONO',
+          };
+        }).filter(r => r.amount > 0);
+        this.uploadError = '';
+        this.uploadResult = null;
+      };
+      reader.readAsText(file);
+    },
+
+    async uploadCSV() {
+      this.uploading = true; this.uploadError = '';
+      const r = await API.post('/api/admin/conciliacion/upload', { movements: this.csvPreview });
+      this.uploading = false;
+      if (!r.ok) { this.uploadError = r.data.error||'Error al procesar.'; return; }
+      this.uploadResult = r.data;
+      this.csvPreview = [];
+      await this.loadUnmatched();
+    },
+
+    async loadUnmatched() {
+      this.loadingUnmatched = true;
+      this.unmatched = await API.get('/api/admin/conciliacion/unmatched') || [];
+      this.loadingUnmatched = false;
+    },
+
+    async init() {
+      await adminLayout('admin_concil').init.call(this);
+      await this.loadUnmatched();
+    }
+  }
+}
+</script>
+</body>
+</html>

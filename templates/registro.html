@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro — Importal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>.gradient-bg { background: linear-gradient(135deg, #0f4a8a 0%, #1a6bbf 100%); }</style>
+</head>
+<body x-data="regApp()" class="font-[Inter] min-h-screen flex">
+
+<div class="hidden md:flex w-1/2 gradient-bg flex-col justify-center px-16 text-white">
+  <a href="/" class="flex items-center gap-2 mb-12 text-white/80 hover:text-white text-sm">← Volver al inicio</a>
+  <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center mb-6">
+    <span class="text-2xl font-extrabold">IM</span>
+  </div>
+  <h1 class="text-3xl font-extrabold mb-4">Únete a Importal</h1>
+  <p class="text-blue-200 text-lg leading-relaxed mb-10">Crea tu cuenta y empieza a importar desde EE.UU. con precios competitivos y total trazabilidad.</p>
+  <div class="bg-white/10 rounded-2xl p-5 text-sm text-blue-100 space-y-2">
+    <div class="font-semibold text-white mb-2">Comisiones según tu inversión:</div>
+    <div class="flex justify-between"><span>Hasta $149.999</span><span class="font-bold text-yellow-300">25%</span></div>
+    <div class="flex justify-between"><span>$150.000 – $249.999</span><span class="font-bold text-yellow-300">20%</span></div>
+    <div class="flex justify-between"><span>$250.000 o más</span><span class="font-bold text-yellow-300">15%</span></div>
+  </div>
+</div>
+
+<div class="flex-1 flex items-center justify-center px-6 py-10 bg-gray-50 overflow-y-auto">
+  <div class="w-full max-w-md">
+    <div class="flex items-center gap-2 mb-8 md:hidden">
+      <div class="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center">
+        <span class="text-white font-bold text-sm">IM</span>
+      </div>
+      <span class="font-bold text-xl text-gray-900">Importal</span>
+    </div>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-1">Crear cuenta</h2>
+    <p class="text-gray-500 text-sm mb-7">Completa el formulario para empezar</p>
+
+    <div x-show="error" x-cloak class="alert alert-danger mb-5">
+      <span>⚠️</span><span x-text="error"></span>
+    </div>
+    <div x-show="success" x-cloak class="alert alert-success mb-5">
+      <span>✅</span><span>¡Registro exitoso! Redirigiendo al panel…</span>
+    </div>
+
+    <form @submit.prevent="register()">
+      <div class="form-group">
+        <label>Nombre completo *</label>
+        <input type="text" x-model="form.name" placeholder="María González" required>
+      </div>
+      <div class="form-group">
+        <label>Correo electrónico *</label>
+        <input type="email" x-model="form.email" placeholder="maria@ejemplo.cl" required>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-group">
+          <label>RUT</label>
+          <input type="text" x-model="form.rut" placeholder="12.345.678-9">
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" x-model="form.phone" placeholder="+56 9 XXXX XXXX">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Empresa / Nombre comercial (opcional)</label>
+        <input type="text" x-model="form.company" placeholder="Mi Empresa SpA">
+      </div>
+      <div class="form-group">
+        <label>Contraseña * <span class="text-gray-400 font-normal">(mín. 6 caracteres)</span></label>
+        <input type="password" x-model="form.password" placeholder="••••••••" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label>Confirmar contraseña *</label>
+        <input type="password" x-model="form.password2" placeholder="••••••••" required>
+      </div>
+      <div class="flex items-start gap-2 mb-5">
+        <input type="checkbox" id="acepto" x-model="form.acepto" class="mt-1 flex-shrink-0">
+        <label for="acepto" class="text-xs text-gray-500 cursor-pointer">
+          Acepto los <a href="/#tarifas" target="_blank" class="text-blue-600 underline">términos y condiciones</a> de Importal, incluyendo la política de mora (5%+5%) y tarifas vigentes.
+        </label>
+      </div>
+      <button type="submit" :disabled="loading || !form.acepto" class="btn btn-primary w-full btn-lg justify-center" :class="{'opacity-60 cursor-not-allowed': loading || !form.acepto}">
+        <span x-show="loading" class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>
+        <span x-text="loading ? 'Creando cuenta…' : 'Crear cuenta gratis'"></span>
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-500 mt-5">¿Ya tienes cuenta? <a href="/login" class="text-blue-600 font-semibold hover:underline">Iniciar sesión</a></p>
+  </div>
+</div>
+
+<script>
+function regApp() {
+  return {
+    form: { name:'', email:'', rut:'', phone:'', company:'', password:'', password2:'', acepto:false },
+    error: '', success: false, loading: false,
+    async register() {
+      if (this.form.password !== this.form.password2) { this.error = 'Las contraseñas no coinciden.'; return; }
+      this.loading = true; this.error = '';
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: this.form.name, email: this.form.email,
+            password: this.form.password, rut: this.form.rut,
+            phone: this.form.phone, company: this.form.company,
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) { this.error = data.error || 'Error al registrarse.'; return; }
+        this.success = true;
+        setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
+      } catch(e) {
+        this.error = 'Error de conexión. Intenta de nuevo.';
+      } finally {
+        this.loading = false;
+      }
+    }
+  }
+}
+</script>
+</body>
+</html>

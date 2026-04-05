@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tracking — Importal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/layout.js"></script>
+  <style>[x-cloak]{display:none!important} .gradient-card{background:linear-gradient(135deg,#1a6bbf 0%,#0f4a8a 100%);}</style>
+</head>
+<body x-data="trackingApp()" x-init="init()" class="font-[Inter] bg-gray-50 min-h-screen">
+
+<aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+  class="fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col" style="transition:transform .25s ease">
+  <div class="h-16 flex items-center px-5 border-b border-gray-100">
+    <div class="w-8 h-8 rounded-lg gradient-card flex items-center justify-center mr-2"><span class="text-white font-bold text-sm">IM</span></div>
+    <span class="font-bold text-gray-900">Importal</span>
+  </div>
+  <nav class="flex-1 p-3 space-y-1">
+    <template x-for="n in nav" :key="n.key">
+      <a :href="n.href" :class="page===n.key ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm">
+        <span x-text="n.icon"></span><span x-text="n.label"></span>
+      </a>
+    </template>
+  </nav>
+  <div class="p-4 border-t border-gray-100">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-9 h-9 rounded-full gradient-card flex items-center justify-center text-white font-bold text-sm" x-text="user?.name?.[0]?.toUpperCase()||'?'"></div>
+      <div class="min-w-0"><div class="text-sm font-semibold text-gray-900 truncate" x-text="user?.name||'...'"></div></div>
+    </div>
+    <button @click="logout()" class="text-xs text-gray-400 hover:text-red-500 px-1">Cerrar sesión →</button>
+  </div>
+</aside>
+<div x-show="sidebarOpen" @click="sidebarOpen=false" class="fixed inset-0 z-30 bg-black/30 md:hidden" x-cloak></div>
+
+<div class="md:ml-60 min-h-screen">
+  <header class="h-16 bg-white border-b border-gray-200 flex items-center px-4 md:px-6 gap-4 sticky top-0 z-20">
+    <button @click="sidebarOpen=!sidebarOpen" class="md:hidden text-gray-500 text-xl">☰</button>
+    <h1 class="font-bold text-gray-900 flex-1">Tracking de mis cargas</h1>
+  </header>
+
+  <main class="p-4 md:p-6 max-w-4xl mx-auto">
+    <div x-show="loading" class="loading">Cargando…</div>
+    <div x-show="!loading && cargas.length===0" class="empty-state">
+      <div class="icon">🗺️</div>
+      <div class="font-medium">Sin cargas para mostrar</div>
+    </div>
+
+    <!-- Selector de carga -->
+    <div x-show="!loading && cargas.length>0" class="mb-6">
+      <div class="flex gap-2 flex-wrap">
+        <template x-for="c in cargas" :key="c.id">
+          <button @click="selectedCarga=c.id"
+            :class="selectedCarga===c.id ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-300'"
+            class="px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm" x-text="c.code">
+          </button>
+        </template>
+      </div>
+    </div>
+
+    <!-- Timeline de la carga seleccionada -->
+    <template x-if="selectedCarga && !loading">
+      <div>
+        <div x-show="!currentTracking || currentTracking.length===0" class="empty-state">
+          <div class="icon">📍</div>
+          <div class="font-medium">Sin eventos registrados aún</div>
+          <div class="text-sm mt-1">Los eventos aparecerán a medida que tu carga avance</div>
+        </div>
+
+        <div x-show="currentTracking && currentTracking.length>0" class="card">
+          <!-- Header carga seleccionada -->
+          <template x-for="c in cargas.filter(x=>x.id===selectedCarga)" :key="c.id">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+              <div>
+                <h2 class="font-bold text-xl text-gray-900" x-text="c.code"></h2>
+                <div class="text-sm text-gray-400 mt-0.5" x-text="c.type + ' · Apertura: ' + API.fmt.date(c.open_date)"></div>
+              </div>
+              <span :class="'badge '+(API.fmt.status[c.status]?.cls||'badge-pending')" x-text="API.fmt.status[c.status]?.label||c.status"></span>
+            </div>
+          </template>
+
+          <!-- Stages -->
+          <div class="relative ml-4">
+            <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-600 to-blue-100"></div>
+            <div class="space-y-6">
+              <template x-for="(ev, i) in stagesForSelected" :key="i">
+                <div class="relative pl-8">
+                  <!-- Dot -->
+                  <div :class="ev.done ? 'bg-blue-600 ring-blue-200' : 'bg-gray-200 ring-gray-100'"
+                    class="absolute -left-2 w-5 h-5 rounded-full border-2 border-white ring-4 flex items-center justify-center">
+                    <span x-show="ev.done" class="text-white text-xs">✓</span>
+                  </div>
+                  <div :class="ev.done ? '' : 'opacity-40'" class="bg-gray-50 rounded-xl p-4 border" :class="ev.current ? 'border-blue-300 bg-blue-50' : 'border-gray-100'">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span x-text="ev.icon" class="text-lg"></span>
+                      <span class="font-semibold text-gray-900 text-sm" x-text="ev.label"></span>
+                      <span x-show="ev.current" class="badge bg-blue-100 text-blue-700 text-xs">Actual</span>
+                    </div>
+                    <div x-show="ev.date" class="text-xs text-gray-400 mb-1" x-text="'📅 ' + API.fmt.datetime(ev.date)"></div>
+                    <div x-show="ev.notes" class="text-xs text-gray-500 italic" x-text="ev.notes"></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </main>
+</div>
+
+<script>
+const STAGE_ORDER = [
+  { key:'ORDERED',          icon:'📋', label:'Orden confirmada' },
+  { key:'PURCHASED',        icon:'🛒', label:'Compra realizada en USA' },
+  { key:'IN_WAREHOUSE_US',  icon:'🏭', label:'En bodega USA (Miami)' },
+  { key:'IN_FLIGHT',        icon:'✈️', label:'En vuelo a Chile' },
+  { key:'IN_CUSTOMS',       icon:'🛃', label:'En aduana chilena' },
+  { key:'IN_WAREHOUSE_CL',  icon:'🏠', label:'En bodega Chile' },
+  { key:'DISPATCHED',       icon:'🚚', label:'Despachado por courier' },
+  { key:'DELIVERED',        icon:'📦', label:'Entregado' },
+];
+
+function trackingApp() {
+  return {
+    ...layoutApp('tracking'),
+    cargas: [],
+    trackingAll: {},
+    selectedCarga: null,
+    loading: true,
+
+    get currentTracking() {
+      if (!this.selectedCarga) return [];
+      return this.trackingAll[this.selectedCarga] || [];
+    },
+
+    get stagesForSelected() {
+      const events = this.currentTracking;
+      const doneKeys = events.map(e => e.stage);
+      const lastKey = doneKeys[doneKeys.length - 1];
+      return STAGE_ORDER.map(s => {
+        const ev = events.find(e => e.stage === s.key);
+        const isDone = !!ev;
+        return {
+          ...s,
+          done: isDone,
+          current: s.key === lastKey,
+          date: ev?.stage_date || null,
+          notes: ev?.notes || '',
+        };
+      });
+    },
+
+    async init() {
+      await layoutApp('tracking').init.call(this);
+      const cargas = await API.get('/api/cargas');
+      this.cargas = cargas || [];
+      if (this.cargas.length > 0) {
+        // Check URL param
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramId = parseInt(urlParams.get('carga'));
+        this.selectedCarga = paramId || this.cargas[0]?.id;
+        // Load tracking for all
+        const tracking = await API.get('/api/tracking');
+        this.trackingAll = tracking || {};
+      }
+      this.loading = false;
+    }
+  }
+}
+</script>
+</body>
+</html>

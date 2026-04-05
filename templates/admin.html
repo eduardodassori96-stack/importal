@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Importal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/admin_layout.js"></script>
+  <style>[x-cloak]{display:none!important} .gradient-card{background:linear-gradient(135deg,#1a6bbf 0%,#0f4a8a 100%);} .gradient-success{background:linear-gradient(135deg,#27ae60,#1e8449);} .gradient-warn{background:linear-gradient(135deg,#f39c12,#d68910);} .gradient-danger{background:linear-gradient(135deg,#e74c3c,#c0392b);}</style>
+</head>
+<body x-data="adminDashApp()" x-init="init()" class="font-[Inter] bg-gray-50 min-h-screen">
+
+<!-- Sidebar Admin -->
+<aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+  class="fixed inset-y-0 left-0 z-40 w-60 bg-gray-900 flex flex-col" style="transition:transform .25s ease">
+  <div class="h-16 flex items-center px-5 border-b border-gray-700">
+    <div class="w-8 h-8 rounded-lg gradient-card flex items-center justify-center mr-2"><span class="text-white font-bold text-sm">IM</span></div>
+    <div>
+      <div class="font-bold text-white text-sm">Importal</div>
+      <div class="text-gray-400 text-xs">Panel Admin</div>
+    </div>
+  </div>
+  <nav class="flex-1 p-3 space-y-1">
+    <template x-for="n in nav" :key="n.key">
+      <a :href="n.href" :class="page===n.key ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors font-medium">
+        <span x-text="n.icon"></span><span x-text="n.label"></span>
+      </a>
+    </template>
+  </nav>
+  <div class="p-4 border-t border-gray-700">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm" x-text="user?.name?.[0]?.toUpperCase()||'A'"></div>
+      <div class="min-w-0">
+        <div class="text-sm font-semibold text-white truncate" x-text="user?.name||'Admin'"></div>
+        <div class="text-xs text-gray-400">Administrador</div>
+      </div>
+    </div>
+    <button @click="logout()" class="text-xs text-gray-500 hover:text-red-400 transition-colors px-1">Cerrar sesión →</button>
+  </div>
+</aside>
+<div x-show="sidebarOpen" @click="sidebarOpen=false" class="fixed inset-0 z-30 bg-black/50 md:hidden" x-cloak></div>
+
+<div class="md:ml-60 min-h-screen">
+  <header class="h-16 bg-white border-b border-gray-200 flex items-center px-4 md:px-6 gap-4 sticky top-0 z-20">
+    <button @click="sidebarOpen=!sidebarOpen" class="md:hidden text-gray-500 text-xl">☰</button>
+    <div class="flex-1">
+      <h1 class="font-bold text-gray-900">Dashboard Administrativo</h1>
+    </div>
+    <div class="text-xs text-gray-400" x-text="today"></div>
+  </header>
+
+  <main class="p-4 md:p-6 max-w-6xl mx-auto">
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="rounded-2xl p-5 text-white gradient-card shadow-lg">
+        <div class="text-3xl font-extrabold" x-text="stats.total_clients??'—'"></div>
+        <div class="text-sm text-blue-200 mt-1">👥 Clientes activos</div>
+      </div>
+      <div class="rounded-2xl p-5 text-white gradient-success shadow-lg">
+        <div class="text-3xl font-extrabold" x-text="stats.cargas_activas??'—'"></div>
+        <div class="text-sm text-green-200 mt-1">📦 Cargas activas</div>
+      </div>
+      <div class="rounded-2xl p-5 text-white gradient-warn shadow-lg">
+        <div class="text-3xl font-extrabold" x-text="API.fmt.clp(stats.deuda_total)"></div>
+        <div class="text-sm text-yellow-200 mt-1">⏳ Deuda total pendiente</div>
+      </div>
+      <div class="rounded-2xl p-5 text-white gradient-danger shadow-lg">
+        <div class="text-3xl font-extrabold" x-text="stats.clientes_mora??'—'"></div>
+        <div class="text-sm text-red-200 mt-1">⚠️ Clientes en mora</div>
+      </div>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="grid md:grid-cols-3 gap-4 mb-8">
+      <div class="card text-center">
+        <div class="text-4xl font-extrabold text-gray-900" x-text="API.fmt.clp(stats.recaudado_mes)"></div>
+        <div class="text-sm text-gray-500 mt-1">💰 Recaudado este mes</div>
+      </div>
+      <div class="card text-center">
+        <div class="text-4xl font-extrabold text-gray-900" x-text="stats.cobros_pendientes??'—'"></div>
+        <div class="text-sm text-gray-500 mt-1">🧾 Cobros pendientes</div>
+      </div>
+      <div class="card text-center">
+        <div class="text-4xl font-extrabold text-gray-900" x-text="stats.pagos_sin_confirmar??'—'"></div>
+        <div class="text-sm text-gray-500 mt-1">📋 Pagos por confirmar</div>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+      <!-- Pagos pendientes de confirmar -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-gray-900">Pagos por confirmar</h2>
+          <a href="/admin/cobros" class="text-sm text-blue-600 hover:underline">Ver todos →</a>
+        </div>
+        <div x-show="loadingPagos" class="loading text-sm py-4">Cargando…</div>
+        <div x-show="!loadingPagos && pendingPagos.length===0" class="empty-state py-4 text-sm">
+          <div>✅ Sin pagos pendientes de confirmar</div>
+        </div>
+        <div x-show="!loadingPagos && pendingPagos.length>0" class="space-y-2">
+          <template x-for="p in pendingPagos.slice(0,5)" :key="p.id">
+            <div class="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-100">
+              <div>
+                <div class="text-sm font-semibold text-gray-900" x-text="p.client_name||'Cliente'"></div>
+                <div class="text-xs text-gray-500" x-text="API.fmt.clp(p.amount_clp) + ' · ' + API.fmt.datetime(p.created_at)"></div>
+              </div>
+              <button @click="confirmPago(p.id)" class="btn btn-success text-xs">✓ Confirmar</button>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Clientes en mora -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-gray-900">Clientes en mora</h2>
+          <a href="/admin/clientes" class="text-sm text-blue-600 hover:underline">Ver todos →</a>
+        </div>
+        <div x-show="loadingMora" class="loading text-sm py-4">Cargando…</div>
+        <div x-show="!loadingMora && moraClients.length===0" class="empty-state py-4 text-sm">
+          <div>✅ Sin clientes en mora</div>
+        </div>
+        <div x-show="!loadingMora && moraClients.length>0" class="space-y-2">
+          <template x-for="c in moraClients.slice(0,5)" :key="c.id">
+            <div class="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-100">
+              <div>
+                <div class="text-sm font-semibold text-gray-900" x-text="c.name"></div>
+                <div class="text-xs text-gray-500" x-text="'Deuda: ' + API.fmt.clp(c.total_deuda)"></div>
+              </div>
+              <span class="badge badge-overdue" x-text="c.mora_status||'MORA'"></span>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- Links rápidos -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <a href="/admin/cargas" class="card text-center hover:border-blue-300 hover:shadow-md transition-all cursor-pointer">
+        <div class="text-3xl mb-2">📦</div>
+        <div class="font-semibold text-sm text-gray-900">Nueva carga</div>
+      </a>
+      <a href="/admin/cobros" class="card text-center hover:border-blue-300 hover:shadow-md transition-all cursor-pointer">
+        <div class="text-3xl mb-2">🧾</div>
+        <div class="font-semibold text-sm text-gray-900">Crear cobro</div>
+      </a>
+      <a href="/admin/clientes" class="card text-center hover:border-blue-300 hover:shadow-md transition-all cursor-pointer">
+        <div class="text-3xl mb-2">👥</div>
+        <div class="font-semibold text-sm text-gray-900">Ver clientes</div>
+      </a>
+      <a href="/admin/conciliacion" class="card text-center hover:border-blue-300 hover:shadow-md transition-all cursor-pointer">
+        <div class="text-3xl mb-2">🏦</div>
+        <div class="font-semibold text-sm text-gray-900">Conciliación</div>
+      </a>
+    </div>
+  </main>
+</div>
+
+<script>
+function adminDashApp() {
+  return {
+    ...adminLayout('admin'),
+    stats: {},
+    pendingPagos: [],
+    moraClients: [],
+    loadingPagos: true,
+    loadingMora: true,
+    today: new Date().toLocaleDateString('es-CL', { weekday:'long', day:'numeric', month:'long', year:'numeric' }),
+
+    async confirmPago(id) {
+      if (!confirm('¿Confirmar este pago?')) return;
+      const r = await API.post('/api/admin/pagos/confirm', { pago_id: id });
+      if (r.ok) {
+        this.pendingPagos = this.pendingPagos.filter(p => p.id !== id);
+        this.stats.pagos_sin_confirmar = Math.max(0, (this.stats.pagos_sin_confirmar||1)-1);
+      }
+    },
+
+    async init() {
+      await adminLayout('admin').init.call(this);
+      const [stats, pagos, clientes] = await Promise.all([
+        API.get('/api/admin/stats'),
+        API.get('/api/admin/pagos'),
+        API.get('/api/admin/clientes'),
+      ]);
+      this.stats = stats || {};
+      this.pendingPagos = (pagos||[]).filter(p => !p.confirmed_at);
+      this.moraClients = (clientes||[]).filter(c => c.mora_status && c.mora_status !== 'NONE');
+      this.loadingPagos = false;
+      this.loadingMora = false;
+    }
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagos — Importal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/layout.js"></script>
+  <style>[x-cloak]{display:none!important} .gradient-card{background:linear-gradient(135deg,#1a6bbf 0%,#0f4a8a 100%);}</style>
+</head>
+<body x-data="pagosApp()" x-init="init()" class="font-[Inter] bg-gray-50 min-h-screen">
+
+<!-- Sidebar (same pattern) -->
+<aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+  class="fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col" style="transition:transform .25s ease">
+  <div class="h-16 flex items-center px-5 border-b border-gray-100">
+    <div class="w-8 h-8 rounded-lg gradient-card flex items-center justify-center mr-2"><span class="text-white font-bold text-sm">IM</span></div>
+    <span class="font-bold text-gray-900">Importal</span>
+  </div>
+  <nav class="flex-1 p-3 space-y-1">
+    <template x-for="n in nav" :key="n.key">
+      <a :href="n.href" :class="page===n.key ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors">
+        <span x-text="n.icon"></span><span x-text="n.label"></span>
+      </a>
+    </template>
+  </nav>
+  <div class="p-4 border-t border-gray-100">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-9 h-9 rounded-full gradient-card flex items-center justify-center text-white font-bold text-sm" x-text="user?.name?.[0]?.toUpperCase()||'?'"></div>
+      <div class="min-w-0"><div class="text-sm font-semibold text-gray-900 truncate" x-text="user?.name||'...'"></div></div>
+    </div>
+    <button @click="logout()" class="text-xs text-gray-400 hover:text-red-500 px-1">Cerrar sesión →</button>
+  </div>
+</aside>
+<div x-show="sidebarOpen" @click="sidebarOpen=false" class="fixed inset-0 z-30 bg-black/30 md:hidden" x-cloak></div>
+
+<div class="md:ml-60 min-h-screen">
+  <header class="h-16 bg-white border-b border-gray-200 flex items-center px-4 md:px-6 gap-4 sticky top-0 z-20">
+    <button @click="sidebarOpen=!sidebarOpen" class="md:hidden text-gray-500 text-xl">☰</button>
+    <h1 class="font-bold text-gray-900 flex-1">Cobros y Pagos</h1>
+  </header>
+
+  <main class="p-4 md:p-6 max-w-5xl mx-auto">
+
+    <!-- Cobros pendientes -->
+    <div class="card mb-6">
+      <h2 class="font-bold text-gray-900 mb-4">Cobros pendientes</h2>
+      <div x-show="loading" class="loading">Cargando…</div>
+      <div x-show="!loading && pendientes.length===0" class="empty-state py-6">
+        <div class="icon">✅</div>
+        <div class="font-medium text-green-600">¡Estás al día!</div>
+        <div class="text-sm mt-1">No tienes cobros pendientes</div>
+      </div>
+      <div x-show="!loading && pendientes.length>0" class="overflow-x-auto">
+        <table>
+          <thead><tr>
+            <th>Código único</th><th>Concepto</th><th>Monto</th><th class="hide-mobile">Mora</th><th class="hide-mobile">Vence</th><th>Estado</th><th>Acción</th>
+          </tr></thead>
+          <tbody>
+            <template x-for="c in pendientes" :key="c.id">
+              <tr>
+                <td class="font-mono text-xs font-semibold text-blue-700" x-text="c.unique_code"></td>
+                <td class="text-xs" x-text="c.type"></td>
+                <td class="font-semibold" x-text="API.fmt.clp(c.amount_clp)"></td>
+                <td class="hide-mobile text-red-600 text-sm font-semibold" x-text="c.mora_amount>0 ? '+'+API.fmt.clp(c.mora_amount) : '—'"></td>
+                <td class="hide-mobile text-xs" :class="isOverdue(c.due_date)?'text-red-600 font-semibold':'text-gray-400'" x-text="API.fmt.date(c.due_date)"></td>
+                <td><span :class="'badge '+(API.fmt.status[c.status]?.cls||'badge-pending')" x-text="API.fmt.status[c.status]?.label||c.status"></span></td>
+                <td><button @click="openPay(c)" class="btn btn-primary text-xs">💳 Pagar</button></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Historial pagos -->
+    <div class="card">
+      <h2 class="font-bold text-gray-900 mb-4">Historial de pagos</h2>
+      <div x-show="loading" class="loading">Cargando…</div>
+      <div x-show="!loading && pagos.length===0" class="empty-state py-6">
+        <div class="icon">🧾</div>
+        <div class="font-medium">Sin pagos registrados aún</div>
+      </div>
+      <div x-show="!loading && pagos.length>0" class="overflow-x-auto">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Código cobro</th><th>Monto</th><th>Método</th><th class="hide-mobile">Código transferencia</th><th>Estado</th>
+          </tr></thead>
+          <tbody>
+            <template x-for="p in pagos" :key="p.id">
+              <tr>
+                <td class="text-xs text-gray-400" x-text="API.fmt.datetime(p.created_at)"></td>
+                <td class="font-mono text-xs text-gray-700" x-text="p.unique_code||'—'"></td>
+                <td class="font-semibold" x-text="API.fmt.clp(p.amount_clp)"></td>
+                <td class="text-xs" x-text="p.method"></td>
+                <td class="hide-mobile font-mono text-xs text-gray-500" x-text="p.transfer_code||'—'"></td>
+                <td>
+                  <span :class="p.confirmed_at ? 'badge badge-paid' : 'badge badge-pending'" x-text="p.confirmed_at ? 'Confirmado' : 'En revisión'"></span>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── MODAL PAGO ─────────────────────────────────────────────── -->
+<div x-show="payModal" x-cloak class="modal-overlay show" @click.self="payModal=false">
+  <div class="modal w-full max-w-md mx-4">
+    <button @click="payModal=false" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
+    <h2 class="text-xl font-bold text-gray-900 mb-1">Registrar pago</h2>
+    <p class="text-sm text-gray-500 mb-4">Ingresa los datos de tu transferencia</p>
+
+    <div x-show="payError" x-cloak class="alert alert-danger mb-4"><span>⚠️</span><span x-text="payError"></span></div>
+    <div x-show="paySuccess" x-cloak class="alert alert-success mb-4"><span>✅</span><span>Pago registrado. Lo revisaremos pronto.</span></div>
+
+    <template x-if="selected">
+      <div class="bg-blue-50 rounded-xl p-4 mb-4 text-sm">
+        <div class="font-semibold text-gray-900 mb-1">Cobro seleccionado</div>
+        <div class="flex justify-between text-gray-700">
+          <span x-text="selected?.type"></span>
+          <span class="font-bold" x-text="API.fmt.clp((selected?.amount_clp||0)+(selected?.mora_amount||0))"></span>
+        </div>
+        <div class="mt-2 font-mono text-xs text-blue-700 bg-white rounded-lg px-3 py-2 border border-blue-200">
+          Código a incluir en glosa: <strong x-text="selected?.unique_code"></strong>
+        </div>
+        <div class="text-xs text-gray-500 mt-1">⚠️ Incluye este código en el mensaje/glosa de tu transferencia</div>
+      </div>
+    </template>
+
+    <form @submit.prevent="submitPay()">
+      <div class="form-group">
+        <label>Monto transferido (CLP) *</label>
+        <input type="number" x-model="payForm.amount" :placeholder="(selected?.amount_clp||0)+(selected?.mora_amount||0)" required min="1">
+      </div>
+      <div class="form-group">
+        <label>Código / número de transferencia</label>
+        <input type="text" x-model="payForm.transfer_code" placeholder="Número de operación del banco">
+      </div>
+      <div class="form-group">
+        <label>Notas adicionales</label>
+        <textarea x-model="payForm.notes" rows="2" placeholder="Ej: Transferencia realizada a las 15:30 desde BCI"></textarea>
+      </div>
+      <button type="submit" :disabled="payLoading" class="btn btn-primary w-full btn-lg justify-center" :class="{'opacity-60':payLoading}">
+        <span x-show="payLoading" class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>
+        <span x-text="payLoading ? 'Registrando…' : 'Registrar pago'"></span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+function pagosApp() {
+  return {
+    ...layoutApp('pagos'),
+    cobros: [], pagos: [],
+    pendientes: [],
+    loading: true,
+    payModal: false,
+    payError: '', paySuccess: false, payLoading: false,
+    selected: null,
+    payForm: { amount: '', transfer_code: '', notes: '' },
+
+    isOverdue(d) { return d && new Date(d) < new Date(); },
+
+    openPay(cobro) {
+      this.selected = cobro;
+      this.payForm = { amount: (cobro.amount_clp||0)+(cobro.mora_amount||0), transfer_code: '', notes: '' };
+      this.payError = ''; this.paySuccess = false;
+      this.payModal = true;
+    },
+
+    async submitPay() {
+      this.payLoading = true; this.payError = '';
+      const r = await API.post('/api/pagos', {
+        cobro_id: this.selected.id,
+        amount_clp: parseFloat(this.payForm.amount),
+        method: 'TRANSFER',
+        transfer_code: this.payForm.transfer_code,
+        notes: this.payForm.notes,
+      });
+      this.payLoading = false;
+      if (!r.ok) { this.payError = r.data.error || 'Error al registrar.'; return; }
+      this.paySuccess = true;
+      setTimeout(async () => {
+        this.payModal = false;
+        await this.loadData();
+      }, 2000);
+    },
+
+    async loadData() {
+      const [cobros, pagos] = await Promise.all([API.get('/api/cobros'), API.get('/api/pagos')]);
+      this.cobros = cobros || [];
+      this.pagos = pagos || [];
+      this.pendientes = this.cobros.filter(c => ['PENDING','OVERDUE','MORA_1','MORA_2'].includes(c.status));
+    },
+
+    async init() {
+      await layoutApp('pagos').init.call(this);
+      await this.loadData();
+      this.loading = false;
+    }
+  }
+}
+</script>
+</body>
+</html>

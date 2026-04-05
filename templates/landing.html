@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importal — El portal del importador</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    [x-cloak] { display: none !important; }
+    html { scroll-behavior: smooth; }
+    .gradient-hero { background: linear-gradient(135deg, #0f4a8a 0%, #1a6bbf 50%, #1e88d4 100%); }
+    .gradient-card { background: linear-gradient(135deg, #1a6bbf 0%, #0f4a8a 100%); }
+    .text-gradient { background: linear-gradient(135deg, #f0a500, #e8920a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .step-line::after { content:''; position:absolute; top:50%; left:100%; width:100%; height:2px; background: linear-gradient(to right, #1a6bbf, #e5e7eb); transform: translateY(-50%); }
+    .fade-in { animation: fadeIn .6s ease forwards; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    .sticky-nav { backdrop-filter: blur(10px); background: rgba(255,255,255,0.95); }
+  </style>
+</head>
+<body x-data="app()" class="font-[Inter]">
+
+<!-- ── NAV ──────────────────────────────────────────────────────── -->
+<nav class="sticky top-0 z-50 sticky-nav border-b border-gray-100 shadow-sm">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg gradient-card flex items-center justify-center">
+        <span class="text-white font-bold text-sm">IM</span>
+      </div>
+      <div>
+        <span class="font-bold text-gray-900 text-lg leading-none">Importal</span>
+        <div class="text-xs text-gray-400 font-medium leading-none hidden sm:block">El portal del importador</div>
+      </div>
+    </a>
+    <div class="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
+      <a href="#como-funciona" class="hover:text-blue-600 transition-colors">¿Cómo funciona?</a>
+      <a href="#tarifas" class="hover:text-blue-600 transition-colors">Tarifas</a>
+      <a href="#faq" class="hover:text-blue-600 transition-colors">FAQ</a>
+      <a href="#contacto" class="hover:text-blue-600 transition-colors">Contacto</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="/login" class="text-sm font-semibold text-blue-700 hover:text-blue-900 transition-colors">Iniciar sesión</a>
+      <button @click="openModal('register')" class="btn btn-primary text-sm">Registrarse</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ──────────────────────────────────────────────────────── -->
+<section class="gradient-hero text-white py-20 md:py-28">
+  <div class="max-w-6xl mx-auto px-4 text-center">
+    <div class="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 text-sm mb-6">
+      <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+      Tu portal de importaciones desde EE.UU.
+    </div>
+    <h1 class="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
+      El portal del importador<br>
+      <span class="text-gradient">simple, trazable y transparente</span>
+    </h1>
+    <p class="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto mb-10">
+      Gestiona tus importaciones desde Amazon, Walmart, Nike y más de 50 tiendas — con seguimiento en tiempo real, cobros digitales y total control desde tu cuenta.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <button @click="openModal('register')" class="btn btn-lg bg-yellow-500 hover:bg-yellow-400 text-white font-bold shadow-xl">
+        ✦ Abrir mi portal — es gratis
+      </button>
+      <a href="#como-funciona" class="btn btn-lg bg-white/10 hover:bg-white/20 text-white border border-white/30">
+        Ver cómo funciona →
+      </a>
+    </div>
+    <!-- Stats bar -->
+    <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-white/20 pt-10">
+      <div><div class="text-3xl font-extrabold">+500</div><div class="text-blue-200 text-sm mt-1">Importadores activos</div></div>
+      <div><div class="text-3xl font-extrabold">6</div><div class="text-blue-200 text-sm mt-1">Proveedores verificados</div></div>
+      <div><div class="text-3xl font-extrabold">14–21</div><div class="text-blue-200 text-sm mt-1">Días de entrega (aéreo)</div></div>
+      <div><div class="text-3xl font-extrabold">100%</div><div class="text-blue-200 text-sm mt-1">Trazabilidad en línea</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CÓMO FUNCIONA ─────────────────────────────────────────────── -->
+<section id="como-funciona" class="py-20 bg-gray-50">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="text-center mb-14">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">¿Cómo funciona?</h2>
+      <p class="text-gray-500 mt-3 max-w-xl mx-auto">Proceso 100% digital en 5 pasos — sin WhatsApp, sin planillas</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+      <template x-for="(step, i) in steps" :key="i">
+        <div class="flex flex-col items-center text-center group">
+          <div class="w-14 h-14 rounded-2xl gradient-card flex items-center justify-center text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform" x-text="step.icon"></div>
+          <div class="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1" x-text="'Paso '+(i+1)"></div>
+          <h3 class="font-bold text-gray-900 mb-2" x-text="step.title"></h3>
+          <p class="text-sm text-gray-500" x-text="step.desc"></p>
+        </div>
+      </template>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROCESO TIMELINE ──────────────────────────────────────────── -->
+<section class="py-20 bg-white">
+  <div class="max-w-4xl mx-auto px-4">
+    <div class="text-center mb-14">
+      <h2 class="text-3xl font-bold text-gray-900">Seguimiento en tiempo real</h2>
+      <p class="text-gray-500 mt-3">Siempre sabrás dónde está tu pedido</p>
+    </div>
+    <div class="relative">
+      <div class="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-600 to-blue-100 md:left-1/2"></div>
+      <div class="space-y-8">
+        <template x-for="(stage, i) in timeline" :key="i">
+          <div :class="i%2===0 ? 'md:flex-row' : 'md:flex-row-reverse'" class="flex flex-row md:flex items-center gap-4 md:gap-8 pl-16 md:pl-0">
+            <div class="flex-1" :class="i%2===0 ? 'md:text-right' : 'md:text-left'">
+              <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center gap-2 mb-1" :class="i%2===0 ? 'md:justify-end' : ''">
+                  <span x-text="stage.icon" class="text-lg"></span>
+                  <span class="font-bold text-gray-900 text-sm" x-text="stage.title"></span>
+                </div>
+                <p class="text-xs text-gray-500" x-text="stage.desc"></p>
+                <span class="inline-block mt-2 text-xs font-semibold text-blue-600 bg-blue-50 rounded-full px-2 py-0.5" x-text="stage.time"></span>
+              </div>
+            </div>
+            <div class="absolute left-6 md:relative md:left-auto flex-shrink-0">
+              <div class="w-5 h-5 rounded-full bg-blue-600 border-4 border-white shadow ring-2 ring-blue-200"></div>
+            </div>
+            <div class="flex-1 hidden md:block"></div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TIPOS DE CARGA ────────────────────────────────────────────── -->
+<section class="py-20 bg-gray-50">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="text-center mb-14">
+      <h2 class="text-3xl font-bold text-gray-900">Tipos de carga</h2>
+      <p class="text-gray-500 mt-3">Elige la modalidad según tu necesidad</p>
+    </div>
+    <div class="grid md:grid-cols-2 gap-8">
+      <!-- Aérea -->
+      <div class="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm hover:shadow-md transition-shadow">
+        <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl mb-5">✈️</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Carga Aérea</h3>
+        <p class="text-gray-500 text-sm mb-5">Ideal para productos livianos y de alto valor. Rápida y segura.</p>
+        <ul class="space-y-2 text-sm text-gray-600 mb-6">
+          <li class="flex items-center gap-2"><span class="text-green-500">✓</span> 14–21 días de entrega</li>
+          <li class="flex items-center gap-2"><span class="text-green-500">✓</span> Ropa, tecnología, accesorios</li>
+          <li class="flex items-center gap-2"><span class="text-green-500">✓</span> Seguimiento vuelo a vuelo</li>
+          <li class="flex items-center gap-2"><span class="text-green-500">✓</span> Cobro por kg real y/o kg vol</li>
+        </ul>
+        <div class="bg-blue-50 rounded-xl p-4">
+          <div class="text-xs text-blue-700 font-semibold uppercase tracking-wide mb-1">Tarifa flete</div>
+          <div class="text-2xl font-extrabold text-blue-800">$8.500 <span class="text-sm font-normal">/ kg</span></div>
+          <div class="text-xs text-blue-600 mt-1">+ impuestos + comisión según monto</div>
+        </div>
+      </div>
+      <!-- Marítima -->
+      <div class="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm hover:shadow-md transition-shadow">
+        <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-3xl mb-5">🚢</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Carga Marítima</h3>
+        <p class="text-gray-500 text-sm mb-5">Para productos de mayor volumen y peso. Más económica por kg.</p>
+        <ul class="space-y-2 text-sm text-gray-600 mb-6">
+          <li class="flex items-center gap-2"><span class="text-green-500">✓</span> 45–60 días de entrega</li>
+          <li class="flex items-center gap-2"><span class="text-green-500">✓</span> Muebles, electrodomésticos, voluminosos</li>
+          <li class="flex items-center gap-2"><span class="text-green-500">✓</span> Seguimiento por etapas de puerto</li>
+          <li class="flex items-center gap-2"><span class="text-green-500">✓</span> Cobro por m³ / contenedor</li>
+        </ul>
+        <div class="bg-indigo-50 rounded-xl p-4">
+          <div class="text-xs text-indigo-700 font-semibold uppercase tracking-wide mb-1">Tarifa base</div>
+          <div class="text-2xl font-extrabold text-indigo-800">Consultar <span class="text-sm font-normal">/ m³</span></div>
+          <div class="text-xs text-indigo-600 mt-1">Varía según consolidado y rutas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TARIFAS / COMISIONES ──────────────────────────────────────── -->
+<section id="tarifas" class="py-20 bg-white">
+  <div class="max-w-5xl mx-auto px-4">
+    <div class="text-center mb-14">
+      <h2 class="text-3xl font-bold text-gray-900">Tarifas transparentes</h2>
+      <p class="text-gray-500 mt-3 max-w-lg mx-auto">Sin letras chicas ni sorpresas. La comisión varía según tu volumen de importación — mientras más importas, menos pagas.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6 mb-10">
+      <template x-for="(tier, i) in tiers" :key="i">
+        <div :class="i===2 ? 'ring-2 ring-blue-500 shadow-lg scale-105' : 'border border-gray-200'" class="rounded-2xl bg-white p-6 text-center relative hover:shadow-md transition-shadow">
+          <div x-show="i===2" class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">Más popular</div>
+          <div class="text-3xl mb-3" x-text="tier.icon"></div>
+          <div class="text-sm font-semibold text-gray-500 mb-1" x-text="tier.label"></div>
+          <div class="text-4xl font-extrabold text-gray-900 mb-1" x-text="tier.pct"></div>
+          <div class="text-sm text-gray-400" x-text="tier.range"></div>
+          <div class="mt-4 pt-4 border-t text-xs text-gray-500" x-text="tier.note"></div>
+        </div>
+      </template>
+    </div>
+    <!-- Desglose cobros -->
+    <div class="bg-gray-50 rounded-2xl p-6 md:p-8">
+      <h3 class="font-bold text-gray-900 mb-4">¿Qué incluye tu cobro?</h3>
+      <div class="grid md:grid-cols-2 gap-3 text-sm">
+        <template x-for="item in cobros_items" :key="item.label">
+          <div class="flex items-start gap-3 bg-white rounded-xl p-3 border border-gray-100">
+            <span x-text="item.icon" class="text-lg flex-shrink-0"></span>
+            <div>
+              <div class="font-semibold text-gray-800" x-text="item.label"></div>
+              <div class="text-gray-500 text-xs" x-text="item.desc"></div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TÉRMINOS Y CONDICIONES ────────────────────────────────────── -->
+<section class="py-20 bg-gray-50">
+  <div class="max-w-4xl mx-auto px-4">
+    <div class="text-center mb-10">
+      <h2 class="text-3xl font-bold text-gray-900">Términos & Condiciones</h2>
+      <p class="text-gray-500 mt-3">Lo que debes saber antes de importar con nosotros</p>
+    </div>
+    <div class="grid md:grid-cols-2 gap-5">
+      <template x-for="term in terms" :key="term.title">
+        <div class="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-200 transition-colors">
+          <div class="flex items-center gap-3 mb-2">
+            <span x-text="term.icon" class="text-xl"></span>
+            <h4 class="font-bold text-gray-900" x-text="term.title"></h4>
+          </div>
+          <p class="text-sm text-gray-500" x-text="term.desc"></p>
+        </div>
+      </template>
+    </div>
+    <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-amber-800">
+      <strong>⚠️ Mora por atraso:</strong> Los pagos vencidos acumulan un interés del 5% a las 24 hrs y un 5% adicional a las 48 hrs. Pasados 10 días sin regularización, el cliente queda suspendido hasta ponerse al día.
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ───────────────────────────────────────────────────────── -->
+<section id="faq" class="py-20 bg-white">
+  <div class="max-w-3xl mx-auto px-4">
+    <div class="text-center mb-14">
+      <h2 class="text-3xl font-bold text-gray-900">Preguntas frecuentes</h2>
+    </div>
+    <div class="space-y-3">
+      <template x-for="(faq, i) in faqs" :key="i">
+        <div class="border border-gray-200 rounded-xl overflow-hidden">
+          <button @click="faq.open = !faq.open" class="w-full text-left px-5 py-4 flex items-center justify-between font-semibold text-gray-900 hover:bg-gray-50 transition-colors">
+            <span x-text="faq.q"></span>
+            <span x-text="faq.open ? '−' : '+'" class="text-blue-600 font-bold text-xl flex-shrink-0 ml-3"></span>
+          </button>
+          <div x-show="faq.open" x-transition class="px-5 py-4 bg-gray-50 text-sm text-gray-600 border-t border-gray-100" x-text="faq.a"></div>
+        </div>
+      </template>
+    </div>
+  </div>
+</section>
+
+<!-- ── CONTACTO ──────────────────────────────────────────────────── -->
+<section id="contacto" class="py-20 gradient-hero text-white">
+  <div class="max-w-4xl mx-auto px-4 text-center">
+    <h2 class="text-3xl font-bold mb-4">¿Listo para importar de forma profesional?</h2>
+    <p class="text-blue-100 mb-10 max-w-lg mx-auto">Únete a Importal y gestiona tus importaciones desde EE.UU. con trazabilidad total y cobros digitales — todo desde tu portal.</p>
+    <div class="grid md:grid-cols-3 gap-5 mb-10">
+      <div class="bg-white/10 rounded-2xl p-6 hover:bg-white/20 transition-colors">
+        <div class="text-3xl mb-3">📧</div>
+        <div class="font-semibold mb-1">Email</div>
+        <div class="text-blue-200 text-sm">contacto@importal.cl</div>
+      </div>
+      <div class="bg-white/10 rounded-2xl p-6 hover:bg-white/20 transition-colors">
+        <div class="text-3xl mb-3">💬</div>
+        <div class="font-semibold mb-1">WhatsApp</div>
+        <div class="text-blue-200 text-sm">+56 9 XXXX XXXX</div>
+      </div>
+      <div class="bg-white/10 rounded-2xl p-6 hover:bg-white/20 transition-colors">
+        <div class="text-3xl mb-3">🕐</div>
+        <div class="font-semibold mb-1">Horario</div>
+        <div class="text-blue-200 text-sm">Lun–Vie 9:00–18:00</div>
+      </div>
+    </div>
+    <button @click="openModal('register')" class="btn btn-lg bg-yellow-500 hover:bg-yellow-400 text-white font-bold shadow-xl">
+      ✦ Crear cuenta gratis
+    </button>
+  </div>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────────────────────────── -->
+<footer class="bg-gray-900 text-gray-400 py-10">
+  <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg gradient-card flex items-center justify-center">
+        <span class="text-white font-bold text-xs">IM</span>
+      </div>
+      <span class="font-semibold text-white">Importal</span>
+    </div>
+    <div class="text-sm">© 2026 Importal — Todos los derechos reservados</div>
+    <div class="flex gap-4 text-sm">
+      <a href="#tarifas" class="hover:text-white transition-colors">Tarifas</a>
+      <a href="#faq" class="hover:text-white transition-colors">FAQ</a>
+      <a href="/login" class="hover:text-white transition-colors">Acceder</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ── MODAL: REGISTRO ───────────────────────────────────────────── -->
+<div x-show="modal === 'register'" x-cloak class="modal-overlay show" @click.self="modal=null">
+  <div class="modal w-full max-w-md mx-4">
+    <button @click="modal=null" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl font-bold">✕</button>
+    <div class="w-10 h-10 rounded-xl gradient-card flex items-center justify-center mb-4">
+      <span class="text-white font-bold">IM</span>
+    </div>
+    <h2 class="text-xl font-bold text-gray-900 mb-1">Crear cuenta en Importal</h2>
+    <p class="text-sm text-gray-500 mb-6">Es gratis. Empieza a importar hoy.</p>
+
+    <div x-show="regError" x-cloak class="alert alert-danger mb-4">
+      <span>⚠️</span><span x-text="regError"></span>
+    </div>
+    <div x-show="regSuccess" x-cloak class="alert alert-success mb-4">
+      <span>✅</span><span>¡Cuenta creada! Redirigiendo…</span>
+    </div>
+
+    <form @submit.prevent="register()">
+      <div class="form-group">
+        <label>Nombre completo *</label>
+        <input type="text" x-model="regForm.name" placeholder="María González" required>
+      </div>
+      <div class="form-group">
+        <label>Correo electrónico *</label>
+        <input type="email" x-model="regForm.email" placeholder="maria@ejemplo.cl" required>
+      </div>
+      <div class="form-group">
+        <label>RUT</label>
+        <input type="text" x-model="regForm.rut" placeholder="12.345.678-9">
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="tel" x-model="regForm.phone" placeholder="+56 9 XXXX XXXX">
+      </div>
+      <div class="form-group">
+        <label>Empresa (opcional)</label>
+        <input type="text" x-model="regForm.company" placeholder="Mi Empresa SpA">
+      </div>
+      <div class="form-group">
+        <label>Contraseña * (mín. 6 caracteres)</label>
+        <input type="password" x-model="regForm.password" placeholder="••••••••" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label>Confirmar contraseña *</label>
+        <input type="password" x-model="regForm.password2" placeholder="••••••••" required>
+      </div>
+      <div class="flex items-start gap-2 mb-4">
+        <input type="checkbox" id="acepto" x-model="regForm.acepto" class="mt-1 flex-shrink-0">
+        <label for="acepto" class="text-xs text-gray-500 cursor-pointer">
+          Acepto los <a href="#tarifas" class="text-blue-600 underline">términos y condiciones</a>, incluyendo la política de mora por atrasos y las tarifas vigentes.
+        </label>
+      </div>
+      <button type="submit" :disabled="regLoading || !regForm.acepto" class="btn btn-primary w-full btn-lg justify-center" :class="{'opacity-60 cursor-not-allowed': regLoading || !regForm.acepto}">
+        <span x-show="regLoading" class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+        <span x-text="regLoading ? 'Creando cuenta…' : 'Crear cuenta gratis'"></span>
+      </button>
+    </form>
+    <p class="text-center text-sm text-gray-500 mt-4">¿Ya tienes cuenta? <a href="/login" class="text-blue-600 font-semibold hover:underline">Inicia sesión</a></p>
+  </div>
+</div>
+
+<script>
+function app() {
+  return {
+    modal: null,
+    regError: '',
+    regSuccess: false,
+    regLoading: false,
+    regForm: { name:'', email:'', rut:'', phone:'', company:'', password:'', password2:'', acepto:false },
+
+    steps: [
+      { icon:'🔍', title:'Elige tu producto', desc:'Busca en cualquier tienda de EE.UU. y compártenos el link.' },
+      { icon:'💳', title:'Confirmamos precio', desc:'Te enviamos un cobro con el precio total en CLP.' },
+      { icon:'🛒', title:'Compramos por ti', desc:'Pagamos en EE.UU. con nuestros medios.' },
+      { icon:'✈️', title:'Despachamos', desc:'Tu producto viaja en nuestra carga consolidada.' },
+      { icon:'📦', title:'Lo recibes', desc:'Entregamos por Starken u otra agencia en tu ciudad.' },
+    ],
+
+    timeline: [
+      { icon:'📋', title:'Orden confirmada', desc:'Tu pedido fue aprobado y procesado', time:'Día 1' },
+      { icon:'🛒', title:'Compra realizada', desc:'Compramos tu producto en la tienda', time:'Día 1–2' },
+      { icon:'🏭', title:'En bodega USA', desc:'Recibido en nuestra bodega en Miami', time:'Día 3–5' },
+      { icon:'✈️', title:'En vuelo', desc:'Partió en la carga consolidada hacia Chile', time:'Día 5–10' },
+      { icon:'🛃', title:'En aduana', desc:'Proceso de internación y declaración', time:'Día 10–14' },
+      { icon:'🏠', title:'En bodega CL', desc:'Recibido y listo para despacho local', time:'Día 14–16' },
+      { icon:'🚚', title:'Despachado', desc:'En camino a tu dirección vía Starken', time:'Día 16–21' },
+    ],
+
+    tiers: [
+      { icon:'🥉', label:'Comisión estándar', pct:'25%', range:'Hasta $149.999 CLP', note:'Inversión inicial o pedidos pequeños' },
+      { icon:'🥈', label:'Comisión intermedia', pct:'20%', range:'$150.000 – $249.999 CLP', note:'Para importadores frecuentes' },
+      { icon:'🥇', label:'Comisión preferencial', pct:'15%', range:'Desde $250.000 CLP', note:'Máximo beneficio para clientes premium' },
+    ],
+
+    cobros_items: [
+      { icon:'💵', label:'Precio del producto (USD→CLP)', desc:'Convertido a la tasa de cambio del día de compra (~$960/USD)' },
+      { icon:'✈️', label:'Flete', desc:'$8.500 CLP/kg real para carga aérea' },
+      { icon:'🏦', label:'Impuesto (Tax USA)', desc:'7,5% fijo sobre el valor del producto' },
+      { icon:'🛃', label:'Aduana Chile', desc:'6% IVA + 6% arancel sobre valor CIF' },
+      { icon:'📦', label:'Comisión de servicio', desc:'15%, 20% o 25% según tu nivel de inversión' },
+      { icon:'🚚', label:'Despacho nacional', desc:'Costo de envío por Starken u otra agencia' },
+    ],
+
+    terms: [
+      { icon:'📅', title:'Fechas de cobro', desc:'Los cobros se generan los lunes, miércoles y viernes una vez que tu pedido está en bodega Chile.' },
+      { icon:'💳', title:'Medios de pago', desc:'Transferencia bancaria. Indica el código único de tu cobro en el campo "mensaje/glosa".' },
+      { icon:'⏰', title:'Plazo de pago', desc:'Tienes hasta la fecha de vencimiento indicada en tu cobro. Sin excepciones.' },
+      { icon:'📸', title:'Comprobante requerido', desc:'Debes subir foto o PDF del comprobante de transferencia en la plataforma.' },
+      { icon:'🚫', title:'Productos prohibidos', desc:'No importamos armas, sustancias controladas, ni productos que violen derechos de autor.' },
+      { icon:'⚖️', title:'Responsabilidad aduanera', desc:'Importal no se responsabiliza por retenciones aduaneras por declaración incorrecta del remitente.' },
+    ],
+
+    faqs: [
+      { q:'¿Cuánto demora una importación aérea?', a:'Generalmente entre 14 y 21 días hábiles desde que realizamos la compra hasta que el producto llega a tu dirección. El tiempo exacto depende de la tienda, el vuelo disponible y el proceso de aduana.', open:false },
+      { q:'¿Puedo importar desde cualquier tienda de EE.UU.?', a:'Sí, siempre que la tienda realice envíos a nuestra dirección en Miami. Trabajamos con Amazon, Walmart, Nike, Adidas, Victoria\'s Secret, y más de 50 tiendas verificadas. Si tienes dudas sobre una tienda específica, contáctanos.', open:false },
+      { q:'¿Cómo sé el costo total antes de confirmar?', a:'Antes de comprometer la compra, te enviamos un presupuesto detallado con el desglose completo: producto, flete, tax, aduana, comisión y despacho. Solo procedemos con tu aprobación.', open:false },
+      { q:'¿Qué pasa si mi producto llega dañado?', a:'Fotografiamos todos los productos en nuestra bodega USA antes del envío. Si llega con daño, abrimos un reclamo con la aseguradora o la tienda. Te mantenemos informado durante todo el proceso.', open:false },
+      { q:'¿Cómo funciona el pago por transferencia?', a:'Al generar tu cobro, recibirás un código único (ej: PS-MAR26-MG-001). Realiza la transferencia al banco indicado y escribe ese código en el campo "mensaje" o "glosa". Nuestro sistema lo identifica automáticamente.', open:false },
+      { q:'¿Qué productos tienen restricciones aduaneras?', a:'Artículos electrónicos >$1.000 USD, alimentos, suplementos, artículos de uso personal (perfumes, cosméticos) tienen regulaciones especiales. Consulta con nosotros antes de pedir.', open:false },
+      { q:'¿Puedo hacer seguimiento de mi pedido?', a:'Sí, desde tu cuenta en la plataforma puedes ver en qué etapa está cada pedido en tiempo real: comprado, en bodega USA, en vuelo, en aduana, en bodega Chile, despachado.', open:false },
+      { q:'¿Qué pasa si me atraso en el pago?', a:'Después de la fecha de vencimiento se aplica 5% de mora. A las 48 hrs, se suma otro 5% (total 10%). Si pasan 10 días sin regularización, la cuenta queda suspendida hasta el pago completo.', open:false },
+    ],
+
+    openModal(name) { this.modal = name; this.regError = ''; this.regSuccess = false; },
+
+    async register() {
+      if (this.regForm.password !== this.regForm.password2) {
+        this.regError = 'Las contraseñas no coinciden.'; return;
+      }
+      if (!this.regForm.acepto) {
+        this.regError = 'Debes aceptar los términos y condiciones.'; return;
+      }
+      this.regLoading = true; this.regError = '';
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: this.regForm.name,
+            email: this.regForm.email,
+            password: this.regForm.password,
+            rut: this.regForm.rut,
+            phone: this.regForm.phone,
+            company: this.regForm.company,
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) { this.regError = data.error || 'Error al registrarse.'; return; }
+        this.regSuccess = true;
+        setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
+      } catch(e) {
+        this.regError = 'Error de conexión. Intenta de nuevo.';
+      } finally {
+        this.regLoading = false;
+      }
+    }
+  }
+}
+</script>
+</body>
+</html>

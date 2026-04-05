@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Perfil — Importal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/layout.js"></script>
+  <style>[x-cloak]{display:none!important} .gradient-card{background:linear-gradient(135deg,#1a6bbf 0%,#0f4a8a 100%);}</style>
+</head>
+<body x-data="perfilApp()" x-init="init()" class="font-[Inter] bg-gray-50 min-h-screen">
+
+<aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+  class="fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col" style="transition:transform .25s ease">
+  <div class="h-16 flex items-center px-5 border-b border-gray-100">
+    <div class="w-8 h-8 rounded-lg gradient-card flex items-center justify-center mr-2"><span class="text-white font-bold text-sm">IM</span></div>
+    <span class="font-bold text-gray-900">Importal</span>
+  </div>
+  <nav class="flex-1 p-3 space-y-1">
+    <template x-for="n in nav" :key="n.key">
+      <a :href="n.href" :class="page===n.key ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm">
+        <span x-text="n.icon"></span><span x-text="n.label"></span>
+      </a>
+    </template>
+  </nav>
+  <div class="p-4 border-t border-gray-100">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-9 h-9 rounded-full gradient-card flex items-center justify-center text-white font-bold text-sm" x-text="user?.name?.[0]?.toUpperCase()||'?'"></div>
+      <div class="min-w-0"><div class="text-sm font-semibold text-gray-900 truncate" x-text="user?.name||'...'"></div></div>
+    </div>
+    <button @click="logout()" class="text-xs text-gray-400 hover:text-red-500 px-1">Cerrar sesión →</button>
+  </div>
+</aside>
+<div x-show="sidebarOpen" @click="sidebarOpen=false" class="fixed inset-0 z-30 bg-black/30 md:hidden" x-cloak></div>
+
+<div class="md:ml-60 min-h-screen">
+  <header class="h-16 bg-white border-b border-gray-200 flex items-center px-4 md:px-6 gap-4 sticky top-0 z-20">
+    <button @click="sidebarOpen=!sidebarOpen" class="md:hidden text-gray-500 text-xl">☰</button>
+    <h1 class="font-bold text-gray-900 flex-1">Mi Perfil</h1>
+  </header>
+
+  <main class="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+
+    <!-- Datos personales -->
+    <div class="card">
+      <h2 class="font-bold text-gray-900 mb-4">Datos personales</h2>
+      <div x-show="profileMsg" class="alert alert-success mb-4"><span>✅</span><span x-text="profileMsg"></span></div>
+      <form @submit.prevent="saveProfile()">
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="form-group">
+            <label>Nombre completo</label>
+            <input type="text" x-model="profileForm.name" required>
+          </div>
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" :value="user?.email" disabled class="bg-gray-50 text-gray-400">
+          </div>
+          <div class="form-group">
+            <label>RUT</label>
+            <input type="text" x-model="profileForm.rut" placeholder="12.345.678-9">
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="tel" x-model="profileForm.phone" placeholder="+56 9 XXXX XXXX">
+          </div>
+          <div class="form-group md:col-span-2">
+            <label>Empresa</label>
+            <input type="text" x-model="profileForm.company" placeholder="Mi Empresa SpA">
+          </div>
+        </div>
+        <button type="submit" :disabled="savingProfile" class="btn btn-primary" :class="{'opacity-60':savingProfile}">
+          <span x-text="savingProfile ? 'Guardando…' : '💾 Guardar datos'"></span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Datos de envío -->
+    <div class="card">
+      <h2 class="font-bold text-gray-900 mb-1">Dirección de despacho</h2>
+      <p class="text-sm text-gray-400 mb-4">Donde recibirás tus pedidos. Puedes actualizar cuando quieras.</p>
+      <div x-show="envioMsg" class="alert alert-success mb-4"><span>✅</span><span x-text="envioMsg"></span></div>
+      <form @submit.prevent="saveEnvio()">
+        <div class="form-group">
+          <label>Dirección completa</label>
+          <input type="text" x-model="envioForm.address" placeholder="Av. Ejemplo 1234, Depto 5B">
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="form-group">
+            <label>Ciudad</label>
+            <input type="text" x-model="envioForm.city" placeholder="Santiago">
+          </div>
+          <div class="form-group">
+            <label>Región</label>
+            <select x-model="envioForm.region">
+              <option value="">Seleccionar…</option>
+              <option>Arica y Parinacota</option><option>Tarapacá</option><option>Antofagasta</option>
+              <option>Atacama</option><option>Coquimbo</option><option>Valparaíso</option>
+              <option>Metropolitana de Santiago</option><option>O'Higgins</option><option>Maule</option>
+              <option>Ñuble</option><option>Biobío</option><option>La Araucanía</option>
+              <option>Los Ríos</option><option>Los Lagos</option><option>Aysén</option><option>Magallanes</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Agencia de courier preferida</label>
+          <select x-model="envioForm.agency">
+            <option>Starken</option><option>Chilexpress</option><option>DHL</option>
+            <option>Blue Express</option><option>Correos de Chile</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Instrucciones adicionales</label>
+          <textarea x-model="envioForm.notes" rows="2" placeholder="Ej: Tocar timbre 2 veces. Portería disponible 8-18hrs."></textarea>
+        </div>
+        <button type="submit" :disabled="savingEnvio" class="btn btn-primary" :class="{'opacity-60':savingEnvio}">
+          <span x-text="savingEnvio ? 'Guardando…' : '💾 Guardar dirección'"></span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Info comisiones -->
+    <div class="card bg-blue-50 border-blue-100">
+      <h2 class="font-bold text-gray-900 mb-3">Mi nivel de comisión</h2>
+      <div class="text-sm text-gray-600 mb-3">La comisión se calcula según tu inversión total en cobros pagados.</div>
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="bg-white rounded-xl p-3 border" :class="commTier===3 ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-200'">
+          <div class="text-2xl font-extrabold text-gray-900">25%</div>
+          <div class="text-xs text-gray-500 mt-0.5">Hasta $149.999</div>
+          <div x-show="commTier===3" class="text-xs text-blue-700 font-bold mt-1">← Tu nivel</div>
+        </div>
+        <div class="bg-white rounded-xl p-3 border" :class="commTier===2 ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-200'">
+          <div class="text-2xl font-extrabold text-gray-900">20%</div>
+          <div class="text-xs text-gray-500 mt-0.5">$150K–$249K</div>
+          <div x-show="commTier===2" class="text-xs text-blue-700 font-bold mt-1">← Tu nivel</div>
+        </div>
+        <div class="bg-white rounded-xl p-3 border" :class="commTier===1 ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-200'">
+          <div class="text-2xl font-extrabold text-gray-900">15%</div>
+          <div class="text-xs text-gray-500 mt-0.5">$250K o más</div>
+          <div x-show="commTier===1" class="text-xs text-blue-700 font-bold mt-1">← Tu nivel</div>
+        </div>
+      </div>
+      <div class="mt-3 text-xs text-gray-500">El nivel se actualiza automáticamente con cada carga.</div>
+    </div>
+  </main>
+</div>
+
+<script>
+function perfilApp() {
+  return {
+    ...layoutApp('perfil'),
+    profileForm: { name:'', rut:'', phone:'', company:'' },
+    envioForm: { address:'', city:'', region:'', agency:'Starken', notes:'' },
+    profileMsg: '', envioMsg: '',
+    savingProfile: false, savingEnvio: false,
+    commTier: 3,
+
+    async init() {
+      await layoutApp('perfil').init.call(this);
+      if (this.user) {
+        this.profileForm = {
+          name: this.user.name||'',
+          rut: this.user.rut||'',
+          phone: this.user.phone||'',
+          company: this.user.company||'',
+        };
+      }
+      const envio = await API.get('/api/perfil/envio');
+      if (envio) {
+        this.envioForm = {
+          address: envio.address||'',
+          city: envio.city||'',
+          region: envio.region||'',
+          agency: envio.agency||'Starken',
+          notes: envio.notes||'',
+        };
+      }
+      // Tier basado en total invertido
+      const stats = await API.get('/api/dashboard/stats');
+      const inv = stats?.total_invertido || 0;
+      this.commTier = inv >= 250000 ? 1 : inv >= 150000 ? 2 : 3;
+    },
+
+    async saveProfile() {
+      this.savingProfile = true;
+      await API.post('/api/perfil', this.profileForm);
+      this.profileMsg = '¡Datos actualizados correctamente!';
+      setTimeout(() => this.profileMsg='', 3000);
+      this.savingProfile = false;
+    },
+
+    async saveEnvio() {
+      this.savingEnvio = true;
+      await API.post('/api/perfil/envio', this.envioForm);
+      this.envioMsg = '¡Dirección guardada correctamente!';
+      setTimeout(() => this.envioMsg='', 3000);
+      this.savingEnvio = false;
+    }
+  }
+}
+</script>
+</body>
+</html>

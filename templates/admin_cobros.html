@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Cobros — Importal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/admin_layout.js"></script>
+  <style>[x-cloak]{display:none!important} .gradient-card{background:linear-gradient(135deg,#1a6bbf 0%,#0f4a8a 100%);}</style>
+</head>
+<body x-data="adminCobrosApp()" x-init="init()" class="font-[Inter] bg-gray-50 min-h-screen">
+
+<aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+  class="fixed inset-y-0 left-0 z-40 w-60 bg-gray-900 flex flex-col" style="transition:transform .25s ease">
+  <div class="h-16 flex items-center px-5 border-b border-gray-700">
+    <div class="w-8 h-8 rounded-lg gradient-card flex items-center justify-center mr-2"><span class="text-white font-bold text-sm">IM</span></div>
+    <div><div class="font-bold text-white text-sm">Importal</div><div class="text-gray-400 text-xs">Panel Admin</div></div>
+  </div>
+  <nav class="flex-1 p-3 space-y-1">
+    <template x-for="n in nav" :key="n.key">
+      <a :href="n.href" :class="page===n.key ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors">
+        <span x-text="n.icon"></span><span x-text="n.label"></span>
+      </a>
+    </template>
+  </nav>
+  <div class="p-4 border-t border-gray-700">
+    <button @click="logout()" class="text-xs text-gray-500 hover:text-red-400 px-1">Cerrar sesión →</button>
+  </div>
+</aside>
+<div x-show="sidebarOpen" @click="sidebarOpen=false" class="fixed inset-0 z-30 bg-black/50 md:hidden" x-cloak></div>
+
+<div class="md:ml-60 min-h-screen">
+  <header class="h-16 bg-white border-b border-gray-200 flex items-center px-4 md:px-6 gap-4 sticky top-0 z-20">
+    <button @click="sidebarOpen=!sidebarOpen" class="md:hidden text-gray-500 text-xl">☰</button>
+    <h1 class="font-bold text-gray-900 flex-1">Cobros y Pagos</h1>
+    <button @click="openCreate()" class="btn btn-primary text-sm">+ Nuevo cobro</button>
+  </header>
+
+  <main class="p-4 md:p-6 max-w-6xl mx-auto">
+
+    <!-- Tabs -->
+    <div class="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit">
+      <button @click="tab='cobros'" :class="tab==='cobros'?'bg-white shadow text-blue-700 font-semibold':'text-gray-500'"
+        class="px-4 py-2 rounded-lg text-sm transition-all">Cobros</button>
+      <button @click="tab='pagos'" :class="tab==='pagos'?'bg-white shadow text-blue-700 font-semibold':'text-gray-500'"
+        class="px-4 py-2 rounded-lg text-sm transition-all">Pagos recibidos</button>
+    </div>
+
+    <!-- COBROS TAB -->
+    <div x-show="tab==='cobros'">
+      <div x-show="loading" class="loading">Cargando…</div>
+      <div x-show="!loading" class="card overflow-x-auto">
+        <!-- Filter -->
+        <div class="flex gap-3 mb-4 flex-wrap">
+          <select x-model="filterStatus" class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white">
+            <option value="">Todos los estados</option>
+            <option value="PENDING">Pendiente</option>
+            <option value="OVERDUE">Vencido</option>
+            <option value="MORA_1">Mora 5%</option>
+            <option value="MORA_2">Mora 10%</option>
+            <option value="PAID">Pagado</option>
+          </select>
+          <input type="text" x-model="search" placeholder="Buscar cliente…" class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white w-44">
+        </div>
+        <table>
+          <thead><tr>
+            <th>Código único</th><th>Cliente</th><th>Carga</th><th>Concepto</th>
+            <th>Monto</th><th class="hide-mobile">Mora</th><th class="hide-mobile">Vence</th><th>Estado</th>
+          </tr></thead>
+          <tbody>
+            <template x-for="c in filteredCobros" :key="c.id">
+              <tr>
+                <td class="font-mono text-xs text-blue-700 font-semibold" x-text="c.unique_code"></td>
+                <td class="text-sm font-medium" x-text="c.client_name||'—'"></td>
+                <td class="text-xs text-gray-500" x-text="c.carga_code||'—'"></td>
+                <td class="text-xs" x-text="c.type"></td>
+                <td class="font-semibold" x-text="API.fmt.clp(c.amount_clp)"></td>
+                <td class="hide-mobile text-red-600 text-sm" x-text="c.mora_amount>0?'+'+API.fmt.clp(c.mora_amount):'—'"></td>
+                <td class="hide-mobile text-xs" :class="isOverdue(c.due_date)&&c.status!=='PAID'?'text-red-600 font-semibold':'text-gray-400'" x-text="API.fmt.date(c.due_date)"></td>
+                <td><span :class="'badge '+(API.fmt.status[c.status]?.cls||'badge-pending')" x-text="API.fmt.status[c.status]?.label||c.status"></span></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <div x-show="filteredCobros.length===0" class="empty-state py-4">Sin cobros</div>
+      </div>
+    </div>
+
+    <!-- PAGOS TAB -->
+    <div x-show="tab==='pagos'">
+      <div x-show="loadingPagos" class="loading">Cargando…</div>
+      <div x-show="!loadingPagos" class="card overflow-x-auto">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Cliente</th><th>Cobro</th><th>Monto</th>
+            <th class="hide-mobile">Cód. transferencia</th><th>Estado</th><th>Acción</th>
+          </tr></thead>
+          <tbody>
+            <template x-for="p in pagos" :key="p.id">
+              <tr>
+                <td class="text-xs text-gray-400" x-text="API.fmt.datetime(p.created_at)"></td>
+                <td class="text-sm font-medium" x-text="p.client_name||'—'"></td>
+                <td class="font-mono text-xs text-gray-600" x-text="p.unique_code||'—'"></td>
+                <td class="font-semibold" x-text="API.fmt.clp(p.amount_clp)"></td>
+                <td class="hide-mobile font-mono text-xs text-gray-500" x-text="p.transfer_code||'—'"></td>
+                <td>
+                  <span :class="p.confirmed_at ? 'badge badge-paid' : 'badge badge-pending'" x-text="p.confirmed_at ? 'Confirmado' : 'Por revisar'"></span>
+                </td>
+                <td>
+                  <button x-show="!p.confirmed_at" @click="confirmPago(p)" class="btn btn-success text-xs">✓ Confirmar</button>
+                  <span x-show="p.confirmed_at" class="text-xs text-gray-400" x-text="API.fmt.date(p.confirmed_at)"></span>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <div x-show="pagos.length===0" class="empty-state py-4">Sin pagos</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Crear cobro -->
+<div x-show="modal==='cobro'" x-cloak class="modal-overlay show" @click.self="modal=null">
+  <div class="modal w-full max-w-md mx-4">
+    <button @click="modal=null" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
+    <h2 class="text-xl font-bold mb-1">Nuevo cobro</h2>
+    <p class="text-sm text-gray-500 mb-4">Se generará un código único para identificación bancaria.</p>
+    <div x-show="newCode" x-cloak class="alert alert-success mb-4">
+      <div>
+        <div class="font-semibold">✅ Cobro creado</div>
+        <div class="text-xs mt-1">Código único: <strong class="font-mono text-blue-800" x-text="newCode"></strong></div>
+      </div>
+    </div>
+    <div x-show="formErr" class="alert alert-danger mb-4"><span>⚠️</span><span x-text="formErr"></span></div>
+    <form @submit.prevent="createCobro()">
+      <div class="form-group">
+        <label>Cliente *</label>
+        <select x-model="cobroForm.client_id" required>
+          <option value="">Seleccionar cliente…</option>
+          <template x-for="c in clientes" :key="c.id">
+            <option :value="c.id" x-text="c.name + ' — ' + c.email"></option>
+          </template>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Carga *</label>
+        <select x-model="cobroForm.carga_id" required>
+          <option value="">Seleccionar carga…</option>
+          <template x-for="c in cargas" :key="c.id">
+            <option :value="c.id" x-text="c.code + ' (' + c.type + ')'"></option>
+          </template>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Concepto *</label>
+        <select x-model="cobroForm.type" required>
+          <option value="FLETE">Flete</option>
+          <option value="PRODUCTO">Producto</option>
+          <option value="IMPUESTO">Impuesto / Tax</option>
+          <option value="ADUANA">Aduana</option>
+          <option value="COMISION">Comisión</option>
+          <option value="DESPACHO">Despacho nacional</option>
+          <option value="MORA">Mora</option>
+          <option value="VARIOS">Varios</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Monto total (CLP) *</label>
+        <input type="number" x-model="cobroForm.amount_clp" required min="1" placeholder="150000">
+      </div>
+      <div class="form-group">
+        <label>Fecha de vencimiento *</label>
+        <input type="date" x-model="cobroForm.due_date" required>
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        <textarea x-model="cobroForm.notes" rows="2" placeholder="Detalle adicional…"></textarea>
+      </div>
+      <button type="submit" :disabled="saving" class="btn btn-primary w-full btn-lg justify-center" :class="{'opacity-60':saving}">
+        <span x-text="saving ? 'Creando…' : 'Crear cobro'"></span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+function adminCobrosApp() {
+  return {
+    ...adminLayout('admin_cobros'),
+    cobros: [], pagos: [], clientes: [], cargas: [],
+    loading: true, loadingPagos: true,
+    tab: 'cobros',
+    filterStatus: '', search: '',
+    modal: null,
+    newCode: '', formErr: '', saving: false,
+    cobroForm: { client_id:'', carga_id:'', type:'FLETE', amount_clp:'', due_date:'', notes:'' },
+
+    isOverdue(d) { return d && new Date(d) < new Date(); },
+
+    get filteredCobros() {
+      return this.cobros.filter(c => {
+        const matchStatus = !this.filterStatus || c.status === this.filterStatus;
+        const matchSearch = !this.search || (c.client_name||'').toLowerCase().includes(this.search.toLowerCase());
+        return matchStatus && matchSearch;
+      });
+    },
+
+    openCreate() {
+      this.cobroForm = { client_id:'', carga_id:'', type:'FLETE', amount_clp:'', due_date:nextPayDate(), notes:'' };
+      this.newCode = ''; this.formErr = ''; this.modal = 'cobro';
+    },
+
+    async createCobro() {
+      this.saving = true; this.formErr = '';
+      const r = await API.post('/api/admin/cobros', this.cobroForm);
+      this.saving = false;
+      if (!r.ok) { this.formErr = r.data.error||'Error al crear.'; return; }
+      this.newCode = r.data.unique_code;
+      // Refresh
+      this.cobros = await API.get('/api/admin/cobros') || [];
+    },
+
+    async confirmPago(p) {
+      if (!confirm('¿Confirmar este pago de '+API.fmt.clp(p.amount_clp)+'?')) return;
+      const r = await API.post('/api/admin/pagos/confirm', { pago_id: p.id });
+      if (r.ok) {
+        p.confirmed_at = new Date().toISOString();
+        // Refresh cobros to update status
+        this.cobros = await API.get('/api/admin/cobros') || [];
+      }
+    },
+
+    async init() {
+      await adminLayout('admin_cobros').init.call(this);
+      const [cobros, pagos, clientes, cargas] = await Promise.all([
+        API.get('/api/admin/cobros'),
+        API.get('/api/admin/pagos'),
+        API.get('/api/admin/clientes'),
+        API.get('/api/admin/cargas'),
+      ]);
+      this.cobros = cobros || [];
+      this.pagos = pagos || [];
+      this.clientes = clientes || [];
+      this.cargas = (cargas||[]).filter(c => c.status !== 'CLOSED');
+      this.loading = false;
+      this.loadingPagos = false;
+    }
+  }
+}
+
+// Próximo lunes, miércoles o viernes
+function nextPayDate() {
+  const d = new Date();
+  const day = d.getDay(); // 0=Dom,1=Lun,...6=Sab
+  const targets = [1,3,5]; // Lun, Mier, Vie
+  let add = 1;
+  for (let i=1; i<=7; i++) {
+    if (targets.includes((day+i)%7)) { add=i; break; }
+  }
+  d.setDate(d.getDate()+add);
+  return d.toISOString().slice(0,10);
+}
+</script>
+</body>
+</html>
