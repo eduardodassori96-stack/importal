@@ -7,6 +7,7 @@ function layoutApp(pageName) {
     user: null,
     sidebarOpen: false,
     async init() {
+      if (!sessionStorage.getItem('auth_token')) { window.location.href = '/login'; return; }
       const me = await API.get('/api/me');
       if (me) this.user = me;
     },

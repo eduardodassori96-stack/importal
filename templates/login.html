@@ -95,6 +95,9 @@ function loginApp() {
         });
         const data = await res.json();
         if (!res.ok) { this.error = data.error || 'Error al iniciar sesión.'; return; }
+        // Guardar token para uso en toda la app
+        sessionStorage.setItem('auth_token', data.token);
+        sessionStorage.setItem('auth_user', JSON.stringify(data.user));
         // Redirect based on role
         if (data.user?.role === 'ADMIN') {
           window.location.href = '/admin';

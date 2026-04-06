@@ -4,15 +4,22 @@
  */
 
 const API = {
+  _token() { return sessionStorage.getItem('auth_token') || ''; },
+  _headers(extra) {
+    const h = { ...(extra || {}) };
+    const t = this._token();
+    if (t) h['Authorization'] = 'Bearer ' + t;
+    return h;
+  },
   async get(path) {
-    const res = await fetch(path, { credentials: 'include' });
-    if (res.status === 401) { window.location.href = '/login'; return null; }
+    const res = await fetch(path, { credentials: 'include', headers: this._headers() });
+    if (res.status === 401) { sessionStorage.clear(); window.location.href = '/login'; return null; }
     return res.json();
   },
   async post(path, data) {
     const res = await fetch(path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: this._headers({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify(data)
     });
