@@ -3,7 +3,7 @@
 Pascalle Store — Servidor Web Principal
 Ejecutar con: python3 server.py
 """
-import http.server, socketserver, json, os, re, cgi, io, threading
+import http.server, socketserver, json, os, re, io, threading
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 import database as db
