@@ -55,7 +55,6 @@
       <div class="form-group">
         <label>Contraseña</label>
         <div class="relative">
-          :type="showPass ? 'text' : 'password'"
           <input :type="showPass ? 'text' : 'password'" x-model="form.password" placeholder="••••••••" required class="bg-white">
           <button type="button" @click="showPass=!showPass" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm">
             <span x-text="showPass ? '🙈' : '👁️'"></span>
@@ -91,6 +90,7 @@ function loginApp() {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(this.form)
         });
         const data = await res.json();

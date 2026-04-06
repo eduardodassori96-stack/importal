@@ -57,7 +57,7 @@ class PascalleHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
     def set_auth_cookie(self, token):
-        self.send_header('Set-Cookie', f'auth_token={token}; Path=/; HttpOnly; Max-Age=86400')
+        self.send_header('Set-Cookie', f'auth_token={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400')
 
     def clear_auth_cookie(self):
         self.send_header('Set-Cookie', 'auth_token=; Path=/; HttpOnly; Max-Age=0')
