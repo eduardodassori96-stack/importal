@@ -163,7 +163,7 @@ class PascalleHandler(http.server.BaseHTTPRequestHandler):
         if not payload:
             self.send_json({'error': 'No autenticado'}, 401)
             return
-        uid = payload['sub']
+        uid = int(payload['sub'])
         role = payload['role']
 
         # Client endpoints
@@ -295,7 +295,7 @@ class PascalleHandler(http.server.BaseHTTPRequestHandler):
         if not payload:
             self.send_json({'error': 'No autenticado'}, 401)
             return
-        uid = payload['sub']
+        uid = int(payload['sub'])
         role = payload['role']
 
         # ── CLIENT: SUBMIT PAGO ──

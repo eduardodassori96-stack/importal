@@ -20,7 +20,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_token(user_id: int, email: str, role: str) -> str:
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),  # PyJWT 2.4+ requires sub to be a string
         "email": email,
         "role": role,
         "exp": datetime.utcnow() + timedelta(hours=TOKEN_EXP_HOURS)
