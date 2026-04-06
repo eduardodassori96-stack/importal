@@ -30,7 +30,8 @@ def create_token(user_id: int, email: str, role: str) -> str:
 def decode_token(token: str) -> dict | None:
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except:
+    except Exception as e:
+        print(f"[AUTH ERROR] decode_token failed: {e}", flush=True)
         return None
 
 def get_token_from_request(handler) -> dict | None:
@@ -44,10 +45,13 @@ def get_token_from_request(handler) -> dict | None:
             token = part[len('auth_token='):]
             break
     # Buscar en header Authorization: Bearer <token>
+    has_auth_header = False
     if not token:
-        auth = handler.headers.get('Authorization', '')
-        if auth.startswith('Bearer '):
-            token = auth[7:]
+        auth_header = handler.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            has_auth_header = True
+    print(f"[AUTH] cookie={'YES' if cookie_header else 'NO'} bearer={'YES' if has_auth_header else 'NO'} token={'FOUND' if token else 'MISSING'}", flush=True)
     if not token:
         return None
     return decode_token(token)
